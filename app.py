@@ -7,7 +7,7 @@ import streamlit as st
 from datetime import datetime, timedelta
 
 
-model = load_model('G:\projects1\StockPredictionModel\Stock Preictions Model.keras')
+model = load_model('Stock Preictions Model.keras')
 
 st.header('Stock Market Predictor')
 
