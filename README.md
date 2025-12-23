@@ -16,6 +16,7 @@ A deep learning-based stock price prediction application that uses LSTM neural n
 ## Demo
 
 The application displays:
+
 - Historical stock data table
 - Price vs MA50 chart
 - Price vs MA50 vs MA100 chart
@@ -32,12 +33,14 @@ The application displays:
 ### Setup
 
 1. Clone the repository:
+
 ```bash
 git clone <repository-url>
 cd StockPredictionModel
 ```
 
 2. Install required dependencies:
+
 ```bash
 pip install numpy pandas matplotlib yfinance keras tensorflow streamlit scikit-learn
 ```
@@ -50,6 +53,7 @@ pip install numpy pandas matplotlib yfinance keras tensorflow streamlit scikit-l
 ### Running the Application
 
 1. Start the Streamlit app:
+
 ```bash
 streamlit run app.py
 ```
@@ -57,6 +61,7 @@ streamlit run app.py
 2. Open your browser and navigate to the URL displayed (typically `http://localhost:8501`)
 
 3. Enter a stock symbol in the input field:
+
    - For Indian stocks: Use format like `HDFCBANK.NS`, `TCS.NS`, `RELIANCE.NS`
    - For US stocks: Use format like `AAPL`, `GOOGL`, `MSFT`
 
@@ -67,6 +72,7 @@ streamlit run app.py
 To train a new model with custom data:
 
 1. Open the Jupyter notebook:
+
 ```bash
 jupyter notebook stock_price_predictor.ipynb
 ```
@@ -83,6 +89,7 @@ jupyter notebook stock_price_predictor.ipynb
 ## Model Architecture
 
 The LSTM model consists of:
+
 - **Input Layer**: 100 timesteps (100 days of historical prices)
 - **LSTM Layer 1**: 50 units with ReLU activation and 20% dropout
 - **LSTM Layer 2**: 60 units with ReLU activation and 30% dropout
@@ -91,6 +98,7 @@ The LSTM model consists of:
 - **Output Layer**: Dense layer with 1 unit (predicted price)
 
 The model is trained using:
+
 - **Optimizer**: Adam
 - **Loss Function**: Mean Squared Error
 - **Training Split**: 80% training, 20% testing
@@ -109,7 +117,7 @@ StockPredictionModel/
 ## How It Works
 
 1. **Data Collection**: Fetches up to 10 years of historical stock data from Yahoo Finance
-2. **Data Preprocessing**: 
+2. **Data Preprocessing**:
    - Splits data into 80% training and 20% testing
    - Normalizes prices using MinMaxScaler
    - Creates sequences of 100 days for LSTM input
@@ -141,6 +149,7 @@ scikit-learn
 ## Support
 
 For issues, questions, or contributions:
+
 - Open an issue in the repository
 - Review the code documentation in `app.py` and `stock_price_predictor.ipynb`
 
