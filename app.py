@@ -5,13 +5,118 @@ import yfinance as yf
 from keras.models import load_model
 import streamlit as st
 from datetime import datetime, timedelta
+import requests
 
 
 model = load_model('Stock Preictions Model.keras')
 
 st.header('Stock Market Predictor')
 
-stock = st.text_input('Enter Stock Symbol', 'HDFCBANK.NS')
+@st.cache_data(ttl=300)
+def search_yahoo_finance(query):
+    """Search Yahoo Finance for stock symbols and company names"""
+    if not query or len(query) < 1:
+        return []
+    
+    try:
+        # Yahoo Finance autocomplete API
+        url = "https://query2.finance.yahoo.com/v1/finance/search"
+        params = {
+            'q': query,
+            'quotesCount': 10,
+            'newsCount': 0,
+            'enableFuzzyQuery': False,
+            'quotesQueryId': 'tss_match_phrase_query'
+        }
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        
+        response = requests.get(url, params=params, headers=headers, timeout=5)
+        
+        if response.status_code == 200:
+            data = response.json()
+            results = []
+            
+            if 'quotes' in data:
+                for quote in data['quotes']:
+                    symbol = quote.get('symbol', '')
+                    name = quote.get('longname') or quote.get('shortname', '')
+                    exchange = quote.get('exchDisp', '')
+                    quote_type = quote.get('quoteType', '')
+                    
+                    # Filter for stocks and ETFs
+                    if quote_type in ['EQUITY', 'ETF', 'MUTUALFUND']:
+                        display_text = f"{name} ({symbol})"
+                        if exchange:
+                            display_text += f" - {exchange}"
+                        results.append({
+                            'display': display_text,
+                            'symbol': symbol,
+                            'name': name
+                        })
+            
+            return results
+    except Exception as e:
+        st.error(f"Search error: {str(e)}")
+        return []
+    
+    return []
+
+# Search Interface
+st.subheader('🔍 Search Stock')
+
+col1, col2 = st.columns([3, 1])
+
+with col1:
+    search_query = st.text_input(
+        'Type company name or symbol',
+        '',
+        placeholder='e.g., Apple, Tesla, Microsoft, HDFC Bank...',
+        label_visibility='collapsed'
+    )
+
+with col2:
+    search_button = st.button('🔎 Search', use_container_width=True)
+
+# Initialize stock variable
+stock = None
+
+# Perform search when button clicked or query entered
+if search_query and (search_button or search_query):
+    with st.spinner('Searching Yahoo Finance...'):
+        results = search_yahoo_finance(search_query)
+    
+    if results:
+        st.success(f'Found {len(results)} results')
+        
+        # Display results
+        stock_options = [r['display'] for r in results]
+        
+        selected_display = st.selectbox(
+            'Select a stock:',
+            options=stock_options,
+            key='stock_select'
+        )
+        
+        # Get the selected symbol
+        selected_index = stock_options.index(selected_display)
+        stock = results[selected_index]['symbol']
+        
+        st.info(f'✅ Selected: **{selected_display}**')
+        
+    else:
+        st.warning('⚠️ No results found. Try a different search term or enter symbol directly below.')
+        stock = st.text_input('Enter stock symbol manually:', 'AAPL')
+else:
+    # Default stock if no search performed
+    st.info('👆 Search for any stock or enter a symbol below')
+    stock = st.text_input('Or enter stock symbol directly:', 'HDFCBANK.NS')
+
+# Proceed only if stock is selected
+if not stock:
+    st.warning('⚠️ Please select or enter a stock symbol to continue')
+    st.stop()
+
+st.divider()
 
 ticker = yf.Ticker(stock)
 
@@ -98,11 +203,10 @@ for i in range(100, data_test_scale.shape[0]):
 x,y = np.array(x), np.array(y)
 
 predict = model.predict(x)
-scale = 1/scaler.scale_
 
-predict = predict * scale
-
-y=y*scale
+# Properly inverse transform to get actual prices
+predict = scaler.inverse_transform(predict)
+y = scaler.inverse_transform(y.reshape(-1, 1))
 
 
 future_days = 30  
@@ -117,8 +221,8 @@ for _ in range(future_days):
     last_100_days = np.append(last_100_days[1:], next_pred[0, 0])
     last_100_days = last_100_days.reshape(-1, 1)
 
-# Scale back future predictions
-future_predictions = np.array(future_predictions) * scale
+# Properly inverse transform future predictions to get actual prices
+future_predictions = scaler.inverse_transform(np.array(future_predictions).reshape(-1, 1))
 
 st.subheader('Original Price vs Predicted Price')
 # Get the corresponding dates for the test data
@@ -129,17 +233,22 @@ last_date = data.index[-1]
 future_dates = pd.date_range(start=last_date + pd.Timedelta(days=1), periods=future_days, freq='D')
 
 # Combine predictions
-all_predictions = np.concatenate([predict.flatten(), future_predictions])
+all_predictions = np.concatenate([predict.flatten(), future_predictions.flatten()])
 all_dates = test_dates.union(future_dates)
 
 fig4 = plt.figure(figsize=(14,9))
-plt.plot(test_dates, y, 'g', label='Original Price', linewidth=2)
+plt.plot(test_dates, y.flatten(), 'g', label='Original Price', linewidth=2)
 plt.plot(all_dates, all_predictions, 'r', label='Predicted Price', linewidth=2)
 plt.axvline(x=last_date, color='gray', linestyle='--', linewidth=1, label='Current Date')
-plt.xlabel('Date')
-plt.ylabel('Price')
-plt.legend()
+plt.xlabel('Date', fontsize=12)
+plt.ylabel('Price', fontsize=12)
+plt.title(f'{stock} - Stock Price Prediction', fontsize=14, fontweight='bold')
+plt.legend(fontsize=11)
 plt.xticks(rotation=45)
+plt.grid(True, alpha=0.3)
+# Format y-axis to show prices with comma separators
+ax = plt.gca()
+ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:,.0f}'))
 plt.tight_layout()
 plt.show()
 st.pyplot(fig4)
