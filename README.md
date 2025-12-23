@@ -35,7 +35,7 @@ The application displays:
 1. Clone the repository:
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/divyanshu1004/StockPredictionModel
 cd StockPredictionModel
 ```
 
