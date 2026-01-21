@@ -1,4 +1,4 @@
-# Stock Market Predictor 📈
+# [Stock Market Predictor 📈](https://fore-cast.streamlit.app/)
 
 A deep learning-based stock price prediction application that uses LSTM neural networks to forecast stock prices. Built with TensorFlow/Keras and Streamlit for an interactive web interface.
 
